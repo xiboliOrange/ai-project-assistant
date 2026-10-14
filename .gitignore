@@ -43,6 +43,7 @@ out/
 .env.*
 !.env.example
 !.env.template
+data/
 
 # Editors and operating systems
 .idea/

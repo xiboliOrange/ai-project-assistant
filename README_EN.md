@@ -39,9 +39,28 @@ If the imported materials do not cover a question, the system displays a message
 
 ## Current Status
 
-Concept design / In development.
+In development. The Python service supports file upload, metadata queries and edits, and manually triggered summary and keyword generation. Project Q&A, citations, and the Qt client remain in design or development.
 
-The current focus is on local document management, verifiable citations, question-answering states, and the privacy boundary between local materials and model services. Incomplete capabilities are not presented as shipped features.
+### Run the file service
+
+Use Python 3.11 or newer. Check `python --version` first; if the default is older, replace `python` in the first command below with the path to a Python 3.11 executable. From the project root:
+
+```powershell
+python -m venv venv
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe -m uvicorn main:app --reload
+```
+
+API documentation is available at `http://127.0.0.1:8000/docs`. Uploaded files and the SQLite index are stored locally in `data/uploads/` and `data/files.sqlite3`.
+
+`POST /files/{id}/index` requires `AI_PROJECT_LLM_URL` (the full Chat Completions URL), `AI_PROJECT_LLM_MODEL`, and `AI_PROJECT_LLM_API_KEY` if the service requires a key. The file's UTF-8 content is sent to the configured model service only when this endpoint is called. Other file endpoints do not call a model.
+
+File API test cases, automation, and reusable upload fixtures are in [`test/files/`](test/files/test-cases.md). Fixture files stay in `test/files/fixtures/` after test runs. Install test dependencies and run them with:
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r test\requirements.txt
+.\venv\Scripts\python.exe -m unittest discover -s test\files -p "test_*.py" -v
+```
 
 ## Future Additions
 

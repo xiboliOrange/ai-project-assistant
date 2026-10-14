@@ -39,9 +39,28 @@
 
 ## 当前状态
 
-概念设计 / 开发中。
+开发中。Python 服务已实现文件上传、元数据查询和编辑，以及手动触发的摘要与关键词生成；项目问答、引用和 Qt 客户端仍在设计或开发中。
 
-当前重点是梳理本地资料管理、可验证引用、问答状态和隐私边界，暂不将未完成的能力描述为已上线功能。
+### 运行文件服务
+
+需要 Python 3.11 或更高版本。先确认 `python --version`；若默认版本较低，请将下方首行的 `python` 换成 Python 3.11 的可执行文件路径。在项目根目录执行：
+
+```powershell
+python -m venv venv
+.\venv\Scripts\python.exe -m pip install -r requirements.txt
+.\venv\Scripts\python.exe -m uvicorn main:app --reload
+```
+
+接口文档位于 `http://127.0.0.1:8000/docs`。上传的文件和 SQLite 索引分别保存在 `data/uploads/` 与 `data/files.sqlite3`，均为本地运行数据。
+
+`POST /files/{id}/index` 需要设置 `AI_PROJECT_LLM_URL`（完整的 Chat Completions URL）、`AI_PROJECT_LLM_MODEL`，以及服务需要时的 `AI_PROJECT_LLM_API_KEY`。只有调用该接口时，服务才会将对应文件的 UTF-8 正文发送给所配置的模型服务。其他文件接口不调用模型。
+
+文件接口测试用例、自动化代码和可重复使用的上传样例文件位于 [`test/files/`](test/files/test-cases.md)。样例文件保存在 `test/files/fixtures/`，测试运行不会删除它们。安装测试依赖并运行：
+
+```powershell
+.\venv\Scripts\python.exe -m pip install -r test\requirements.txt
+.\venv\Scripts\python.exe -m unittest discover -s test\files -p "test_*.py" -v
+```
 
 ## 后续补充
 

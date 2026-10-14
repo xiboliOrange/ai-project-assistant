@@ -11,6 +11,7 @@
 - 单个文件大小不超过 10 MB（10 * 1024 * 1024 bytes）。
 - 文件保存到 `data/uploads/`。
 - 重名文件自动加编号，禁止覆盖已有文件。
+- 文件名必须是单个安全文件名；拒绝路径分隔符、控制字符、Windows 保留字符/设备名及末尾空格或句点，返回 `INVALID_FILENAME`。
 - 使用 SQLite 保存文件索引。
 - 支持查询文件、用户编辑摘要和关键词、后续调用 LLM 建立索引。
 - 本版本不包含认证、权限、断点续传、在线编辑和二进制文件处理。
@@ -72,6 +73,7 @@ files: UploadFile[]
 6. 返回每个文件的成功或失败结果。
 
 上传时不得读取正文，也不得调用 LLM。
+保存时仅以二进制分块复制文件，不解码或解析正文。
 
 成功项示例：
 
@@ -97,6 +99,7 @@ files: UploadFile[]
 ```
 
 批量上传中单个文件失败，不影响其他合法文件。文件已保存但 SQLite 写入失败时，删除本次保存的文件，避免产生孤儿文件。
+正常批量请求统一返回 HTTP 200 和 `{ "items": [...] }`；单项失败在对应结果中给出 `error_code`、`message`，不改变整批的 HTTP 状态。缺少 `files` 字段或文件列表为空时返回 HTTP 400 `NO_FILES`。
 
 ### 5.2 查询文件列表
 
@@ -166,12 +169,14 @@ POST /files/{id}/index
 5. 将生成字段的来源设为 `llm`。
 
 文件不存在返回 404。LLM 调用失败时不修改已有元数据，并返回 `LLM_FAILED`。
+使用环境变量 `AI_PROJECT_LLM_URL`（完整 Chat Completions URL）、`AI_PROJECT_LLM_MODEL` 和可选的 `AI_PROJECT_LLM_API_KEY` 配置兼容 OpenAI Chat Completions 的本地或远程服务。只有显式调用本接口时才将该文件的正文发送到配置的 URL；配置缺失、正文非 UTF-8、模型响应无效或请求失败均返回 `LLM_FAILED`。模型调用期间用户更新的字段也不得被覆盖。
 
 ## 6. 错误码
 
 | 错误码 | HTTP 状态 | 条件 |
 |---|---:|---|
 | NO_FILES | 400 | 没有上传文件 |
+| INVALID_FILENAME | 400 | 文件名不安全或为空 |
 | UNSUPPORTED_FILE_TYPE | 400 | 不是 txt 或 md |
 | FILE_TOO_LARGE | 413 | 超过 10 MB |
 | FILE_NOT_FOUND | 404 | ID 不存在 |
